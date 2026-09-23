@@ -218,6 +218,36 @@ button:focus-visible{outline:3px solid var(--foam);outline-offset:3px}
   .hud-bl{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:calc(env(safe-area-inset-left,0px) + 180px)}
 }
 @media (pointer:coarse){ .hud-top{display:block} .hud-bl{top:calc(env(safe-area-inset-top,0px) + 96px);bottom:auto;width:auto;padding:8px 16px 10px 14px;gap:4px} .hud-bl .next,.hud-bl .hands{display:none} .cap b{font-size:20px} .lv span b{font-size:20px} .lv em{font-size:14px} #combo{top:max(42%,240px)} }
+@media (pointer:coarse){
+  .hud-tl{gap:4px}
+  .stage-tag{padding:4px 12px 4px 10px;gap:6px} .stage-tag span{font-size:9px;letter-spacing:.08em} .stage-tag b{font-size:14px}
+  .size-line{padding:2px 12px;font-size:10px} .size-line b{font-size:13px}
+  .hud-top{display:block;top:calc(env(safe-area-inset-top,0px) + 74px);bottom:auto;left:calc(env(safe-area-inset-left,0px) + 16px);right:auto;transform:none;width:min(42vw,200px);text-align:left}
+  .grow-label{font-size:9px;margin-bottom:3px;letter-spacing:.1em}
+  .grow-bar{height:8px}
+  .hud-bl{top:calc(env(safe-area-inset-top,0px) + 104px);bottom:auto;left:calc(env(safe-area-inset-left,0px) + 16px);width:auto;padding:6px 14px 8px 12px;gap:3px}
+  .hud-bl .next,.hud-bl .hands{display:none}
+  .cap b{font-size:17px} .lv span b{font-size:17px} .lv em{font-size:12px} .cap small{font-size:8px}
+  .hud-tr{gap:5px} .stat{padding:3px 10px 4px;min-width:0} .stat small{font-size:8px;letter-spacing:.06em} .stat b{font-size:12px}
+  .hud-tr .stat:nth-child(2){display:none}
+  #btnPause{width:32px;height:32px;font-size:12px}
+  #miniWrap{width:92px;top:calc(env(safe-area-inset-top,0px) + 52px)} #miniMap{width:92px;height:92px;border-radius:10px}
+  .mkey{display:none}
+  .zbtns button{width:32px;height:28px;font-size:14px}
+  #combo{right:auto;left:50%;transform:translateX(-50%);top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);text-align:center}
+  #combo b{font-size:34px} #combo small{font-size:10px}
+  #toast{top:calc(env(safe-area-inset-top,0px) + 176px);left:calc(env(safe-area-inset-left,0px) + 16px);transform:none;align-items:flex-start;max-width:60vw}
+  .toast{font-size:11px;padding:4px 12px 4px 6px} .toast img{width:24px;height:24px}
+}
+@media (pointer:coarse) and (max-width:480px){ .stage-tag span{display:none} }
+@media (pointer:coarse) and (orientation:portrait){ #hint{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 250px);font-size:12px;padding:8px 16px} #toast{top:calc(env(safe-area-inset-top,0px) + 184px)} }
+@media (pointer:coarse) and (max-height:500px){
+  #miniWrap{width:78px;top:calc(env(safe-area-inset-top,0px) + 48px)} #miniMap{width:78px;height:78px}
+  #bSpin{width:86px;height:86px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);right:calc(env(safe-area-inset-right,0px) + 18px)} #bSpin span{font-size:19px}
+  #bL,#bR{width:64px;height:64px} #bL{right:calc(env(safe-area-inset-right,0px) + 114px);bottom:calc(env(safe-area-inset-bottom,0px) + 18px)} #bR{right:calc(env(safe-area-inset-right,0px) + 30px);bottom:calc(env(safe-area-inset-bottom,0px) + 112px)}
+  #combo{bottom:calc(env(safe-area-inset-bottom,0px) + 84px)} .tb span{font-size:13px} #hint{max-width:calc(100% - 420px);font-size:12px;white-space:normal;text-align:center}
+  #joyBase{width:110px;height:110px;margin:-55px 0 0 -55px;top:calc(100% - 100px - env(safe-area-inset-bottom,0px))}
+}
 @media (prefers-reduced-motion:reduce){ .co,.ono,.bn,.toast{animation-duration:.01s!important;animation-iteration-count:1} }
 </style>
 
@@ -488,26 +518,81 @@ const Snd = {
   toggle() { this.on = !this.on; if (this.out) this.out.gain.setTargetAtTime(this.on ? .9 : 0, this.ctx.currentTime, .05); return this.on; }
 };
 
+const mf = m => 440 * Math.pow(2, (m - 69) / 12);
 const Music = {
-  on: false, next: 0, step: 0, tempo: 124, energy: 0,
-  start() { if (!Snd.ctx || this.on) return; this.on = true; this.next = Snd.ctx.currentTime + .15; },
-  stop() { this.on = false; },
-  tick() {
-    if (!this.on || !Snd.ctx) return; const c = Snd.ctx, spb = 60 / this.tempo / 4;
-    while (this.next < c.currentTime + .15) { this.play(this.step, this.next); this.next += spb; this.step = (this.step + 1) % 64; }
+  on: false, next: 0, step: 0, song: 'main', vol: .34, g: null, energy: 0, switchAt: 0,
+  init() {
+    if (this.g || !Snd.ctx) return; const c = Snd.ctx;
+    this.g = c.createGain(); this.g.gain.value = 0; this.g.connect(Snd.out);
+    this.dl = c.createDelay(1.5); this.fb = c.createGain(); this.fb.gain.value = .38; this.dlf = c.createBiquadFilter(); this.dlf.type = 'lowpass'; this.dlf.frequency.value = 2600;
+    this.dl.connect(this.dlf); this.dlf.connect(this.fb); this.fb.connect(this.dl); this.dlf.connect(this.g);
+    this.send = c.createGain(); this.send.gain.value = .6; this.send.connect(this.dl);
   },
-  play(s, t) {
-    const D = Snd.musG, bar = Math.floor(s / 16), st = s % 16, e = this.energy;
-    if (st % 4 === 0) { Snd.tone({ f: 150, f2: 42, dur: .16, g: .9, at: t, dest: D }); }
-    if (st % 8 === 4 && e > .15) Snd.noise({ dur: .14, type: 'highpass', f: 1400, g: .35, at: t, dest: D });
-    if (st % 2 === 1) Snd.noise({ dur: .035, type: 'highpass', f: 7500, g: st % 4 === 3 ? .12 : .05, at: t, dest: D });
-    const roots = [38, 34, 36, 33][bar % 4];
-    const pat = { 0: 0, 3: 0, 6: 12, 8: 0, 10: 7, 13: 10, 14: 12 };
-    if (pat[st] !== undefined) { const m = roots + pat[st]; Snd.tone({ f: 440 * Math.pow(2, (m - 69) / 12), dur: .17, type: 'sawtooth', g: .16, at: t, dest: D }); }
-    if (e > .5 && st % 4 === 2) { const m = roots + 24 + [0, 3, 7, 10][(s >> 2) % 4]; Snd.tone({ f: 440 * Math.pow(2, (m - 69) / 12), dur: .1, type: 'square', g: .035, at: t, dest: D }); }
+  start() { if (!Snd.ctx) return; this.init(); if (this.on) return; this.on = true; this.step = 0; this.next = Snd.ctx.currentTime + .1; this.applyTempo(); this.g.gain.setTargetAtTime(this.vol, Snd.ctx.currentTime, .6); },
+  stop() { this.on = false; if (this.g) this.g.gain.setTargetAtTime(0, Snd.ctx.currentTime, .5); },
+  setSong(name) {
+    if (name === this.song) return; this.song = name;
+    if (!this.on || !Snd.ctx) return; this.g.gain.setTargetAtTime(0, Snd.ctx.currentTime, .35); this.switchAt = Snd.ctx.currentTime + 1.4;
+  },
+  applyTempo() { const S = SONGS[this.song]; if (this.dl) this.dl.delayTime.value = 60 / S.bpm * .75; },
+  tick() {
+    if (!this.on || !Snd.ctx) return; const c = Snd.ctx;
+    if (this.switchAt) { if (c.currentTime < this.switchAt) return; this.switchAt = 0; this.step = 0; this.next = c.currentTime + .05; this.applyTempo(); this.g.gain.setTargetAtTime(this.vol, c.currentTime, .8); }
+    const S = SONGS[this.song], spb = 60 / S.bpm / 4;
+    while (this.next < c.currentTime + .2) { S.play(this, this.step, this.next, spb); this.next += spb; this.step = (this.step + 1) % S.len; }
+  },
+  // --- voices ---
+  voice(m, t, dur, { type = 'sawtooth', g = .1, cut = 2000, cutEnd = 0, att = .005, rel = .08, send = 0, det = 0, q = 1 } = {}) {
+    const c = Snd.ctx, o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(mf(m), t); if (det) o.detune.value = det;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = q; f.frequency.setValueAtTime(cut, t); if (cutEnd) f.frequency.exponentialRampToValueAtTime(cutEnd, t + dur);
+    const a = c.createGain(); a.gain.setValueAtTime(.0001, t); a.gain.exponentialRampToValueAtTime(g, t + att); a.gain.setValueAtTime(g, t + Math.max(att, dur - rel)); a.gain.exponentialRampToValueAtTime(.0001, t + dur + rel);
+    o.connect(f); f.connect(a); a.connect(this.g); if (send) { const s = c.createGain(); s.gain.value = send; a.connect(s); s.connect(this.send); }
+    o.start(t); o.stop(t + dur + rel + .05);
+  },
+  kick(t, g = .9) { Snd.tone({ f: 155, f2: 42, dur: .22, g, at: t, dest: this.g }); },
+  snare(t, g = .35) { Snd.noise({ dur: .16, type: 'highpass', f: 1300, g, at: t, dest: this.g }); Snd.tone({ f: 200, f2: 150, dur: .08, type: 'triangle', g: g * .5, at: t, dest: this.g }); },
+  hat(t, g = .06, open = false) { Snd.noise({ dur: open ? .18 : .035, type: 'highpass', f: 8000, g, at: t, dest: this.g }); },
+};
+// chords: [root midi, intervals]
+const CH = { Dm: [50, [0, 3, 7]], Bb: [46, [0, 4, 7]], C: [48, [0, 4, 7]], A: [45, [0, 4, 7]], Gm: [43, [0, 3, 7]], F: [41, [0, 4, 7, 11]], Em: [52, [0, 3, 7, 10]], Dm9: [50, [0, 3, 7, 10, 14]], Cmaj: [48, [0, 4, 7, 11]], G: [43, [0, 4, 7, 14]], Am: [45, [0, 3, 7, 10]], E: [40, [0, 4, 7, 11]] };
+const LEAD_MAIN = [ // [step, midi, len]
+  [0, 74, 2], [2, 77, 2], [4, 81, 4], [8, 79, 2], [10, 77, 2], [12, 76, 2], [14, 77, 2],
+  [16, 74, 4], [20, 70, 2], [22, 72, 2], [24, 74, 6],
+  [32, 76, 2], [34, 79, 2], [36, 84, 4], [40, 82, 2], [42, 81, 2], [44, 79, 4],
+  [48, 81, 4], [52, 76, 2], [54, 81, 2], [56, 85, 6], [62, 83, 2],
+  [64, 86, 2], [66, 84, 2], [68, 81, 4], [72, 79, 2], [74, 77, 2], [76, 79, 2], [78, 81, 2],
+  [80, 82, 4], [84, 81, 2], [86, 79, 2], [88, 77, 6],
+  [96, 76, 2], [98, 79, 2], [100, 84, 3], [103, 82, 1], [104, 81, 2], [106, 79, 2], [108, 76, 4],
+  [112, 81, 2], [114, 79, 2], [116, 77, 2], [118, 76, 2], [120, 73, 4], [124, 76, 4]
+];
+const LEAD_SPACE = [[32, 81, 8], [40, 79, 4], [44, 76, 4], [48, 74, 14], [96, 84, 8], [104, 83, 4], [108, 79, 4], [112, 76, 12], [124, 80, 4]];
+const SONGS = {
+  main: {
+    bpm: 132, len: 128, prog: ['Dm', 'Bb', 'C', 'A', 'Dm', 'Bb', 'Gm', 'A'],
+    play(M, s, t, spb) {
+      const bar = s >> 4, st = s & 15, [root, iv] = CH[this.prog[bar]], e = M.energy;
+      if (st % 4 === 0) M.kick(t); if (st === 14 && bar % 2) M.kick(t, .6);
+      if (st === 4 || st === 12) M.snare(t); if (bar === 7 && st >= 12) M.snare(t, .18);
+      if (st % 2 === 1) M.hat(t, st % 4 === 3 ? .08 : .045, st === 15 && bar % 4 === 3); else if (e > .4) M.hat(t, .03);
+      const bp = [0, -1, 0, -1, 12, -1, 0, 0, -1, 0, -1, 7, 12, -1, 10, -1][st];
+      if (bp >= 0) M.voice(root - 12 + bp, t, spb * 1.6, { g: .15, cut: 900, cutEnd: 180, q: 4, rel: .04 });
+      if (st === 2 || st === 6 || st === 10 || st === 14) for (const i of iv.slice(0, 3)) M.voice(root + 12 + i, t, spb * 1.2, { g: .035, cut: 2600, cutEnd: 700, send: .2, det: rnd(-8, 8) });
+      if (bar >= 4 || e > .3) { const k = iv[(s >> 1) % iv.length] + 24 + 12 * ((s >> 3) & 1); if (st % 2 === 0) M.voice(root + k, t, spb * .9, { type: 'triangle', g: .03, cut: 5000, send: .3 }); }
+      for (const [ls, m, l] of LEAD_MAIN) if (ls === s) { M.voice(m, t, spb * l, { type: 'square', g: .055, cut: 3200, send: .35, att: .01, rel: .1 }); M.voice(m + 12, t, spb * l, { type: 'sine', g: .02, cut: 6000 }); }
+    }
+  },
+  space: {
+    bpm: 88, len: 128, prog: ['F', 'Em', 'Dm9', 'Cmaj', 'F', 'G', 'Am', 'E'],
+    play(M, s, t, spb) {
+      const bar = s >> 4, st = s & 15, [root, iv] = CH[this.prog[bar]];
+      if (st === 0) { for (const i of iv) { M.voice(root + 12 + i, t, spb * 16, { type: 'triangle', g: .03, cut: 1800, att: 1.2, rel: 1.5, send: .45 }); M.voice(root + 12 + i, t, spb * 16, { type: 'sawtooth', g: .012, cut: 900, att: 1.5, rel: 1.5, det: 9 }); } M.voice(root - 12, t, spb * 14, { type: 'sine', g: .16, cut: 400, att: .3, rel: 1 }); }
+      if (st === 0 || st === 8) M.kick(t, .45);
+      if (st === 4 || st === 12) M.hat(t, .025, true);
+      if (st % 2 === 0) { const k = iv[((s >> 1) * 3) % iv.length] + 24 + (((s >> 2) & 3) === 3 ? 12 : 0); M.voice(root + k, t, spb * 3, { type: 'triangle', g: .04, cut: 6000, att: .004, rel: .5, send: .6 }); }
+      for (const [ls, m, l] of LEAD_SPACE) if (ls === s) M.voice(m, t, spb * l, { type: 'sine', g: .06, cut: 5000, att: .15, rel: .8, send: .55 });
+    }
   }
 };
-
 /* =====================================================================
    RENDERER & POST
    ===================================================================== */
@@ -1211,7 +1296,7 @@ function buildBVisual(b) {
     geo.setAttribute('color', new THREE.BufferAttribute(cc, 3)); geo.computeVertexNormals();
     mk(g, geo, M('rockv', () => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92, flatShading: true })), 0, b.h * .12, 0);
   } else if (T.kind === 'mountain') {
-    const geo = new THREE.ConeGeometry(.5, 1, 56, 14), p = geo.attributes.position, cc = new Float32Array(p.count * 3), sd = rnd(0, 50);
+    const geo = T.green ? new THREE.ConeGeometry(.5, 1, 28, 7) : new THREE.ConeGeometry(.5, 1, 56, 14), p = geo.attributes.position, cc = new Float32Array(p.count * 3), sd = rnd(0, 50);
     const cG = new THREE.Color(T.green ? 0x5f9a42 : 0x5a8040), cB = new THREE.Color(0x7a6a58), cS = new THREE.Color(0xf4f6fa), cl = new THREE.Color();
     for (let i = 0; i < p.count; i++) { let x = p.getX(i), y = p.getY(i) + .5, z = p.getZ(i); const a = Math.atan2(z, x); const n = fbm3(Math.cos(a) * 2 + sd, y * 3, Math.sin(a) * 2, 4); const rr = 1 + n * .35; x *= rr; z *= rr; const yy = y * (T.green ? 1 : 1 + n * .25); p.setXYZ(i, x * b.w, Math.max(0, yy) * b.h, z * b.d);
       const t = yy; cl.copy(cG); if (!T.green) { if (t > .35 + n * .1) cl.lerp(cB, clamp((t - .35) * 4, 0, 1)); if (t > .68 + n * .12) cl.copy(cS); } else cl.offsetHSL(0, 0, n * .08); cc[i * 3] = cl.r; cc[i * 3 + 1] = cl.g; cc[i * 3 + 2] = cl.b; }
@@ -1219,7 +1304,9 @@ function buildBVisual(b) {
     mk(g, geo, M('mountv', () => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 })));
   } else if (T.kind === 'cloud') {
     const cm = M('cloudm', () => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, emissive: 0x9fb4c8, emissiveIntensity: .35 }));
-    for (let i = 0; i < 9; i++) { const s = mk(g, new THREE.SphereGeometry(1, 16, 12), cm, rnd(-.32, .32) * b.w, b.h * rnd(.35, .6), rnd(-.3, .3) * b.d); s.scale.set(b.w * rnd(.18, .3), b.h * rnd(.3, .5), b.d * rnd(.2, .32)); }
+    const geo = new THREE.IcosahedronGeometry(1, 3), p = geo.attributes.position, sd = rnd(0, 40);
+    for (let i = 0; i < p.count; i++) { _v1.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const n = fbm3(_v1.x * 2.2 + sd, _v1.y * 2.2, _v1.z * 2.2, 3); const k = 1 + n * .55; p.setXYZ(i, _v1.x * k * b.w * .5, Math.max(-.25, _v1.y) * k * b.h * .55 + b.h * .45, _v1.z * k * b.d * .5); }
+    geo.computeVertexNormals(); const cl = mk(g, geo, cm); cl.castShadow = true;
   } else if (T.kind === 'coral') {
     const col = new THREE.Color(b.color); const cm = M('coral' + b.color, () => new THREE.MeshStandardMaterial({ color: col, roughness: .55, emissive: col, emissiveIntensity: .18 }));
     const tip = M('coralt' + b.color, () => new THREE.MeshStandardMaterial({ color: col.clone().offsetHSL(0, 0, .15), roughness: .4, emissive: col, emissiveIntensity: .45 }));
@@ -1928,7 +2015,7 @@ const STAGES = [
     env: { sky: [0x3f86d8, 0xe6dcd0, 0x8a8a9a], sunK: 1, fog: 0xd8d4d8, fogN: 3, fogF: 18, hemi: [0xdde8ff, 0x6a6570, .95], sun: [0xfff0dc, 2.8], sunDir: [.6, .6, -.4], exp: 1.05, bloom: [.35, .5, 1.8], ei: .15, dust: 0xb8b0a8, stars: 0 } },
   { key: 'tokyo', envK: 1, no: 5, name: 'カニ東京', en: 'KANI TOKYO', unit: 60, s0: 60, s1: 300, target: 450, half: 1649, spawn: [0, 0],
     env: { sky: [0x4a7ad0, 0xffd6b0, 0x9a90a0], sunK: .8, fog: 0xe8d0c0, fogN: 3, fogF: 18, hemi: [0xf0e6ff, 0x6a6070, 1.0], sun: [0xffe4c8, 3.0], sunDir: [-.5, .5, .5], exp: 1.05, bloom: [.45, .5, 1.5], ei: .45, dust: 0xb8b0b0, stars: 0 } },
-  { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 300, half: 36000, spawn: [0, 0],
+  { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 230, half: 36000, spawn: [0, 0],
     env: { sky: [0x3a78d8, 0xd6e8f8, 0x9ab0c0], sunK: 1, fog: 0xbcd4ec, fogN: 4, fogF: 26, hemi: [0xe0f0ff, 0x5a7050, 1.0], sun: [0xfff4e0, 3.0], sunDir: [.45, .75, .35], exp: 1.02, bloom: [.3, .45, 2], ei: 0, dust: 0xb4a894, stars: 0 } },
   { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 2e7, target: 330, half: 5e7, spawn: [0, 0], space: true,
     env: { sky: [0x06081a, 0x0e1438, 0x06081a], sunK: 1, neb: 1.3, fog: 0x000000, fogN: 1e3, fogF: 2e3, hemi: [0x9aa0d0, 0x303048, .6], sun: [0xffffff, 3.6], sunDir: [1, .35, .55], exp: 1.25, bloom: [.8, .6, .8], ei: 0, dust: 0xa8988a, stars: 1 } },
@@ -2265,7 +2352,7 @@ function buildLand() {
     d[q] = clamp(r, 0, 255); d[q + 1] = clamp(g, 0, 255); d[q + 2] = clamp(b, 0, 255); d[q + 3] = 255;
   }
   tx.putImageData(img, 0, 0); x.imageSmoothingEnabled = true; x.drawImage(tc, 0, 0, c.width, c.height); speckle(x, c.width, .06, 20000);
-  const cities = [[-15000, 12000], [8000, 21000], [-25000, -3000], [9000, -17000], [-6000, 27000]];
+  const cities = [[-15000, 12000], [8000, 21000], [-25000, -3000], [9000, -17000], [-6000, 27000], [-30000, 24000], [-2000, -16000], [12000, 5000], [-18000, -30000], [2000, 33000], [-32000, -14000], [13000, 30000]];
   x.strokeStyle = '#8a8a90'; x.lineWidth = Math.max(2, 120 * k); x.beginPath(); for (const [cx2, cz] of cities) { x.moveTo(P(0), P(0)); x.quadraticCurveTo(P(cx2 * .5 + rnd(-3000, 3000)), P(cz * .5 + rnd(-3000, 3000)), P(cx2), P(cz)); } x.stroke();
   x.strokeStyle = '#3f8ec0'; x.lineWidth = Math.max(2, 200 * k); x.beginPath(); x.moveTo(P(-34000), P(-20000)); x.bezierCurveTo(P(-12000), P(-8000), P(-4000), P(9000), P(17000), P(4000)); x.stroke();
   for (const [cx2, cz] of cities) { x.fillStyle = '#a6a4ac'; x.fillRect(P(cx2 - 1400), P(cz - 1400), 2800 * k, 2800 * k); x.strokeStyle = 'rgba(80,80,90,.6)'; x.lineWidth = 1; for (let t = -1400; t <= 1400; t += 350) { x.beginPath(); x.moveTo(P(cx2 + t), P(cz - 1400)); x.lineTo(P(cx2 + t), P(cz + 1400)); x.moveTo(P(cx2 - 1400), P(cz + t)); x.lineTo(P(cx2 + 1400), P(cz + t)); x.stroke(); } }
@@ -2274,15 +2361,29 @@ function buildLand() {
   waterMesh(30000, H * 2.4, 36000, 0, 0x2a7ab0, 6);
   pl.block(18000, -H, H, H);
   placeCarried(pl);
-  // mountain range (north-west) and hills everywhere else
-  let n = 0; for (let i = 0; i < 400 && n < 24; i++) { const xx = rnd(-33000, -5000), zz = rnd(-33000, -6000), s = rnd(.55, 1.6); if (pl.bld('mountain', xx, zz, { w: 9000 * s, d: 8000 * s * rnd(.8, 1.2), h: 2600 * s * rnd(.8, 1.3), mm: s ** 3 * rnd(.7, 1), pad: -1500 * s })) n++; }
-  n = 0; for (let i = 0; i < 600 && n < 60 * DENS; i++) { const xx = rnd(-34000, 15000), zz = rnd(-34000, 34000), s = rnd(.4, 1.5); if (Math.hypot(xx, zz) < 3500) continue; if (pl.bld('hill', xx, zz, { w: 3000 * s, d: 2600 * s, h: 500 * s * rnd(.7, 1.5), mm: s ** 3, pad: 200 })) n++; }
-  for (let i = 0; i < 10; i++) pl.bld('hill', rnd(21000, 34000), rnd(-33000, 33000), { w: rnd(1500, 4000), d: rnd(1500, 4000), h: rnd(150, 500), color: 0x8aa860, pad: 300 });
-  // other cities
-  const ct = weighted([['highrise', 3], ['office', 3], ['skyscraper', 1], ['mansion', 2]]);
-  for (const [cx2, cz] of cities) for (let i = 0; i < 70 * DENS; i++) { const t = ct(); pl.bld(t, cx2 + rnd(-1300, 1300), cz + rnd(-1300, 1300), { hs: rnd(.8, 1.3), w: BT[t].w * 1.3, d: BT[t].d * 1.3, pad: 25 }); }
-  // clouds drifting above
-  for (let i = 0; i < 34 * DENS; i++) { const s = rnd(.5, 1.8); makeBuilding('cloud', rnd(-34000, 34000), rnd(-34000, 34000), { y0: rnd(450, 1500), w: 2400 * s, d: 1800 * s * rnd(.7, 1.3), h: 700 * s, mm: s ** 3 }); }
+  // mountain ranges all over the land, hills everywhere else
+  const ranges = [[-22000, -22000, 11000], [-26000, 10000, 8000], [0, -28000, 9000], [4000, 26000, 7000], [-10000, -8000, 5000]];
+  for (const [rx, rz, rr] of ranges) { let n = 0; for (let i = 0; i < 260 && n < Math.round(15 * DENS); i++) { const a = rnd(0, TAU), d = Math.sqrt(Math.random()) * rr, xx = rx + Math.cos(a) * d, zz = rz + Math.sin(a) * d, s = rnd(.45, 1.7); if (xx > 15000 || Math.hypot(xx, zz) < 3200) continue; if (pl.bld('mountain', xx, zz, { w: 9000 * s, d: 8000 * s * rnd(.8, 1.2), h: 2600 * s * rnd(.8, 1.4), mm: s ** 3 * rnd(.7, 1), pad: -3600 * s })) n++; } }
+  let n = 0; for (let i = 0; i < 2000 && n < 170 * DENS; i++) { const xx = rnd(-34500, 15500), zz = rnd(-34500, 34500), s = rnd(.35, 1.9); if (Math.hypot(xx, zz) < 2800) continue; if (pl.bld('hill', xx, zz, { w: 3000 * s, d: 2600 * s, h: 500 * s * rnd(.7, 1.6), mm: s ** 3, pad: 60 })) n++; }
+  for (let i = 0; i < 40 * DENS; i++) pl.bld('hill', rnd(19500, 34500), rnd(-34500, 34500), { w: rnd(1500, 5000), d: rnd(1500, 5000), h: rnd(150, 700), color: 0x8aa860, pad: 200 });
+  // many cities, each with oversized towers
+  const ct = weighted([['highrise', 3], ['office', 3], ['skyscraper', 2], ['mansion', 2]]);
+  const allCities = cities;
+  for (const [cx2, cz] of allCities) {
+    for (let i = 0; i < 95 * DENS; i++) { const t = ct(), sc = rnd(1.3, 3.2); pl.bld(t, cx2 + rnd(-1400, 1400), cz + rnd(-1400, 1400), { hs: sc * rnd(.8, 1.2), w: BT[t].w * sc, d: BT[t].d * sc, mm: sc ** 3, pad: 20 }); }
+    const big = pick(['mega', 'kanitower', 'skytree', 'twin']), sc = rnd(1.6, 2.6);
+    pl.bld(big, cx2 + rnd(-400, 400), cz + rnd(-400, 400), { w: BT[big].w * sc, d: BT[big].d * sc, hs: sc, mm: sc ** 3, pad: 40 });
+  }
+  // towns ringing Tokyo, villages everywhere, boulders and small hills in between
+  const vt = weighted([['house', 3], ['house2', 2], ['apartment', 2], ['konbini', 1], ['mansion', 1], ['office', .6]]);
+  const towns = []; for (let i = 0; i < 7; i++) { const a = i / 7 * TAU + rnd(-.2, .2), d = rnd(4200, 7500); towns.push([Math.cos(a) * d, Math.sin(a) * d, 700, 26]); }
+  for (let i = 0; i < 34; i++) towns.push([rnd(-33000, 15000), rnd(-33000, 33000), 500, 14]);
+  for (const [tx, tz, r, cnt] of towns) for (let i = 0; i < cnt * DENS; i++) { const t = vt(), sc = rnd(4, 11); pl.bld(t, tx + rnd(-r, r), tz + rnd(-r, r), { w: BT[t].w * sc, d: BT[t].d * sc, hs: sc * rnd(.8, 1.1), mm: sc ** 3, pad: 10 }); }
+  n = 0; for (let i = 0; i < 3000 && n < 260 * DENS; i++) { const xx = rnd(-34500, 15500), zz = rnd(-34500, 34500), s = Math.exp(rnd(Math.log(110), Math.log(650))); if (Math.hypot(xx, zz) < 2600) continue; if (pl.bld('rock', xx, zz, { w: .9 * s, d: .8 * s * rnd(.7, 1.3), h: .6 * s * rnd(.7, 1.4), mm: s ** 3, color: pick([0x8a8278, 0x7d7670, 0x9a9080, 0x6f6a60]), pad: 20 })) n++; }
+  n = 0; for (let i = 0; i < 3000 && n < 150 * DENS; i++) { const xx = rnd(-34500, 15500), zz = rnd(-34500, 34500), s = rnd(.12, .38); if (Math.hypot(xx, zz) < 2600) continue; if (pl.bld('hill', xx, zz, { w: 3000 * s, d: 2600 * s, h: 500 * s * rnd(.8, 1.6), mm: s ** 3, pad: 30 })) n++; }
+  for (let i = 0; i < 40 * DENS; i++) { const s = rnd(.25, .8); const a = rnd(0, TAU), d = rnd(2500, 30000); makeBuilding('cloud', Math.cos(a) * d, Math.sin(a) * d, { y0: rnd(60, 260), w: 2400 * s, d: 1800 * s, h: 700 * s, mm: s ** 3 }); }
+  // clouds drifting above (bigger ones are heavy weapons later)
+  for (let i = 0; i < 95 * DENS; i++) { const s = Math.exp(rnd(Math.log(.5), Math.log(3.4))); makeBuilding('cloud', rnd(-34000, 34000), rnd(-34000, 34000), { y0: rnd(420, 1800) * Math.sqrt(s), w: 2400 * s, d: 1800 * s * rnd(.7, 1.3), h: 700 * s, mm: s ** 3 }); }
 }
 
 /* =====================================================================
@@ -2757,6 +2858,7 @@ function loadStage(i, carry = null) {
   G.progress = 0; G.crabM = Math.max(G.crabM, STAGE.s0); crab.size = crab.vis = G.crabM / UNIT;
   GRAVITY = SPACE ? 0 : 25 * Math.pow(G.crabM, .75) / UNIT;
   applyEnv(STAGE.env);
+  Music.setSong(STAGE.space ? 'space' : 'main');
   STAGE.starter = null; STAGE.mapImg = null;
   STAGE.build();
   applyEnvK(STAGE.env.envK ?? .6);
@@ -2960,7 +3062,7 @@ function resetGame() {
 const END = { scene: null, t: 0 };
 function startEnding(body) {
   G.state = 'endingA'; G.endT = 0; END.body = body; hint(''); tgtTag.hidden = true; TGT_RING.visible = false;
-  $('touch').hidden = true; slowmo(2.8, .3); callout('さらば、地球', 'GOODBYE EARTH', 'cy', 1); Music.stop();
+  $('touch').hidden = true; slowmo(2.8, .3); callout('さらば、地球', 'GOODBYE EARTH', 'cy', 1); Music.setSong('space');
 }
 function spiralTex() {
   const S = 128, c = mkCanvas(S, S), x = c.getContext('2d'); const g = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2); g.addColorStop(0, 'rgba(255,240,220,1)'); g.addColorStop(.15, 'rgba(255,220,180,.5)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, S, S);
@@ -3313,4 +3415,3 @@ $('bigMapWrap').addEventListener('wheel', e => { e.preventDefault(); mapZoomBy(e
 $('mapZIn').addEventListener('click', () => mapZoomBy(1.6)); $('mapZOut').addEventListener('click', () => mapZoomBy(1 / 1.6));
 addEventListener('keydown', e => { if (G.state !== 'map') return; if (e.code === 'KeyZ' || e.code === 'Equal' || e.code === 'NumpadAdd') mapZoomBy(1.6); if (e.code === 'KeyX' || e.code === 'Minus' || e.code === 'NumpadSubtract') mapZoomBy(1 / 1.6); });
 </script>
-</html>
