@@ -157,7 +157,6 @@ button:focus-visible{outline:3px solid var(--foam);outline-offset:3px}
 .bigBtn:hover{transform:translateX(4px);filter:brightness(1.1)}
 .bigBtn small{font-family:var(--fn);font-weight:700;font-size:12px;letter-spacing:.3em;opacity:.85}
 .subBtns{display:flex;gap:10px}
-.testBtn{flex:none;font-size:12px;padding:8px 14px;opacity:.75;border-style:dashed}
 .subBtn{flex:1;padding:12px 16px;border:1px solid var(--line);background:var(--panel);color:var(--paper);font-weight:700;font-size:14px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .subBtn:hover{background:rgba(255,255,255,.1)}
 .ctrl{padding:14px 20px 16px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px;align-items:center}
@@ -345,7 +344,6 @@ button:focus-visible{outline:3px solid var(--foam);outline-offset:3px}
           <button class="subBtn" id="btnSoundT">サウンド: ON</button>
           <button class="subBtn" id="btnAutoT">自動つかみ: OFF</button>
         </div>
-        <button class="subBtn testBtn" id="btnTest">テストモード：カニ宇宙から開始</button>
         <div class="ctrl slab" id="ctrlPC">
           <h3>操作 — PC</h3>
           <kbd>WASD</kbd><span>移動（カニ歩き）</span>
@@ -435,7 +433,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 21;
+const APP_VERSION = 22;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -3310,11 +3308,6 @@ function startPlay() {
   canvas.focus();
 }
 $('btnStart').addEventListener('click', startPlay);
-// test mode: jump straight into the last stage
-$('btnTest').addEventListener('click', () => {
-  resetGame(); crab.pos.set(0, 0, 0); CARRY = null; G.crabM = STAGES[6].s0; loadStage(6); G.level = computeLevel(); updateGrowth(); G.tut = 9;
-  startPlay(); banner('TEST MODE', STAGE.name, `体長 ${fmtLen(G.crabM)} — テストモード`, 'stage'); hintFor('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう', 7);
-});
 $('btnAgain').addEventListener('click', () => { resetGame(); startPlay(); });
 function resetGame() {
   if (END.scene) { renderPass.scene = scene; renderPass.camera = camera; END.scene = null; }
