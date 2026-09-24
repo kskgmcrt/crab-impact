@@ -435,7 +435,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 20;
+const APP_VERSION = 21;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -1214,15 +1214,15 @@ const BT = {
   earth: { name: '地球', zid: 'earth', kind: 'planet', r: 6371e3, grid: [10, 10, 10], style: 'rock', colors: [0x2f6fb0], mass: 5.97e24, planet: 'earth' },
   ceres: { name: 'カニケレス', zid: 'ceres', kind: 'planet', r: 470e3, grid: [6, 6, 6], style: 'rock', colors: [0x8a8680], mass: 9.4e20, planet: 'ceres' },
   pluto: { name: 'カニ冥王星', zid: 'pluto', kind: 'planet', r: 1188e3, grid: [7, 7, 7], style: 'rock', colors: [0xc8a88a], mass: 1.3e22, planet: 'pluto' },
-  neptune: { name: 'カニ海王星', zid: 'neptune', kind: 'planet', r: 4.9e6, grid: [10, 10, 10], style: 'rock', colors: [0x3a64d8], mass: 1.02e26, planet: 'neptune' },
-  uranus: { name: 'カニ天王星', zid: 'uranus', kind: 'planet', r: 5.1e6, grid: [10, 10, 10], style: 'rock', colors: [0x8ad8e0], mass: 8.7e25, planet: 'uranus' },
+  neptune: { name: 'カニ海王星', zid: 'neptune', kind: 'planet', r: 4.9e6, grid: [10, 10, 10], style: 'rock', colors: [0x3a64d8], mass: 3e25, planet: 'neptune' },
+  uranus: { name: 'カニ天王星', zid: 'uranus', kind: 'planet', r: 5.1e6, grid: [10, 10, 10], style: 'rock', colors: [0x8ad8e0], mass: 2.8e25, planet: 'uranus' },
   crabplanet: { name: '巨大カニ惑星', zid: 'crabplanet', kind: 'planet', r: 1.3e8, grid: [14, 14, 14], style: 'rock', colors: [0xe8502a], mass: 5e28, planet: 'crab', boss: true },
-  pinkgas: { name: 'カニ桃色ガス惑星', zid: 'pinkgas', kind: 'planet', r: 1.15e7, grid: [11, 11, 11], style: 'rock', colors: [0xe8a0b8], mass: 3e26, planet: 'pinkgas' },
-  icegiant: { name: 'カニ氷巨星', zid: 'icegiant', kind: 'planet', r: 7.5e6, grid: [10, 10, 10], style: 'rock', colors: [0x7ad8d0], mass: 1.4e26, planet: 'icegiant' },
-  lava: { name: 'カニ溶岩惑星', zid: 'lava', kind: 'planet', r: 5.2e6, grid: [10, 10, 10], style: 'rock', colors: [0x5a2a1a], mass: 2.5e25, planet: 'lava' },
-  ocean: { name: 'カニスーパーアース', zid: 'ocean', kind: 'planet', r: 9e6, grid: [10, 10, 10], style: 'rock', colors: [0x2f6fb0], mass: 6e25, planet: 'ocean' },
-  saturn: { name: 'カニ土星', zid: 'saturn', kind: 'planet', r: 1.0e7, grid: [11, 11, 11], style: 'rock', colors: [0xd8c08a], mass: 5.7e26, planet: 'saturn' },
-  jupiter: { name: 'カニ木星', zid: 'jupiter', kind: 'planet', r: 1.35e7, grid: [12, 12, 12], style: 'rock', colors: [0xc89a6a], mass: 9e26, planet: 'jupiter' },
+  pinkgas: { name: 'カニ桃色ガス惑星', zid: 'pinkgas', kind: 'planet', r: 1.15e7, grid: [11, 11, 11], style: 'rock', colors: [0xe8a0b8], mass: 4.5e25, planet: 'pinkgas' },
+  icegiant: { name: 'カニ氷巨星', zid: 'icegiant', kind: 'planet', r: 7.5e6, grid: [10, 10, 10], style: 'rock', colors: [0x7ad8d0], mass: 2.5e25, planet: 'icegiant' },
+  lava: { name: 'カニ溶岩惑星', zid: 'lava', kind: 'planet', r: 5.2e6, grid: [10, 10, 10], style: 'rock', colors: [0x5a2a1a], mass: 1.5e25, planet: 'lava' },
+  ocean: { name: 'カニスーパーアース', zid: 'ocean', kind: 'planet', r: 9e6, grid: [10, 10, 10], style: 'rock', colors: [0x2f6fb0], mass: 2e25, planet: 'ocean' },
+  saturn: { name: 'カニ土星', zid: 'saturn', kind: 'planet', r: 1.0e7, grid: [11, 11, 11], style: 'rock', colors: [0xd8c08a], mass: 5e25, planet: 'saturn' },
+  jupiter: { name: 'カニ木星', zid: 'jupiter', kind: 'planet', r: 1.35e7, grid: [12, 12, 12], style: 'rock', colors: [0xc89a6a], mass: 6e25, planet: 'jupiter' },
 };
 
 /* ------- planet textures ------- */
@@ -1884,7 +1884,7 @@ function releaseCell(b, i, vel, spin = 1, wm = null, q = null, quiet = false) {
 const _rc = new V3(), _rs = new V3(), _rq = new QT(), _re = new THREE.Euler(), _rv = new V3(), _rt = new V3(), _rw = new V3();
 const CLOUD_COL = new THREE.Color(0xffffff);
 const _bP = new V3(), _bV = new V3();
-let HIT_MASS = 0; const BOSS_HP = 1000;
+let HIT_MASS = 0; const BOSS_HP = 700;
 function hitBuilding(b, P0, V0, R, cause, src) {
   if (!b.alive || b.grabbed) return 0;
   if (b.boss) return bossHit(b, P0, V0, cause);
@@ -2172,7 +2172,7 @@ const STAGES = [
     env: { sky: [0x4a7ad0, 0xffd6b0, 0x9a90a0], sunK: .8, fog: 0xe8d0c0, fogN: 3, fogF: 18, hemi: [0xf0e6ff, 0x6a6070, 1.0], sun: [0xffe4c8, 3.0], sunDir: [-.5, .5, .5], exp: 1.05, bloom: [.45, .5, 1.5], ei: .45, dust: 0xb8b0b0, stars: 0 } },
   { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 184, half: 44000, spawn: [0, 0],
     env: { sky: [0x3a78d8, 0xd6e8f8, 0x9ab0c0], sunK: 1, fog: 0xbcd4ec, fogN: 4, fogF: 26, hemi: [0xe0f0ff, 0x5a7050, 1.0], sun: [0xfff4e0, 3.0], sunDir: [.45, .75, .35], exp: 1.02, bloom: [.3, .45, 2], ei: 0, dust: 0xb4a894, stars: 0 } },
-  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 1e8, target: 260, half: 5e8, spawn: [0, 0], space: true,
+  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 4e7, target: 260, half: 5e8, spawn: [0, 0], space: true,
     env: { sky: [0x06081a, 0x0e1438, 0x06081a], sunK: 1, neb: 1.3, fog: 0x000000, fogN: 1e3, fogF: 2e3, hemi: [0x9aa0d0, 0x303048, .6], sun: [0xffffff, 3.6], sunDir: [1, .35, .55], exp: 1.25, bloom: [.8, .6, .8], ei: 0, dust: 0xa8988a, stars: 1 } },
 ];
 const LEVELS = [
@@ -2183,7 +2183,7 @@ const LEVELS = [
   { cap: 4e8, name: '高層ビル級', item: '高層ビル', zid: 'highrise' }, { cap: 2e9, name: '超高層ビル級', item: '超高層ビル', zid: 'skyscraper' }, { cap: 4e9, name: 'タワー級', item: 'カニタワー', zid: 'kanitower' },
   { cap: 1.5e10, name: 'カニスカイツリー級', item: 'カニスカイツリー', zid: 'skytree' }, { cap: 2.5e10, name: '巨大建造物級', item: 'カニ・メガストラクチャー', zid: 'mega' }, { cap: 9e12, name: '山級', item: 'カニ山', zid: 'mountain' }, { cap: 8e19, name: '島級', item: '浮遊するカニ島', zid: 'island' },
   { cap: 7.35e22, name: '月級', item: '月', zid: 'moon' }, { cap: 5.97e24, name: '地球級', item: '地球', zid: 'earth' },
-  { cap: 8.7e25, name: '天王星級', item: 'カニ天王星', zid: 'uranus' }, { cap: 5.7e26, name: '土星級', item: 'カニ土星', zid: 'saturn' }, { cap: 9e26, name: '木星級', item: 'カニ木星', zid: 'jupiter' },
+  { cap: 2.8e25, name: '天王星級', item: 'カニ天王星', zid: 'uranus' }, { cap: 5e25, name: '土星級', item: 'カニ土星', zid: 'saturn' }, { cap: 6e25, name: '木星級', item: 'カニ木星', zid: 'jupiter' },
 ];
 LEVELS[0].zid = 'seaweed'; LEVELS[1].zid = 'bucket'; LEVELS[2].zid = 'minitank'; LEVELS[3].zid = 'statue';
 const ZUKAN = ['seaweed', 'shell', 'pebble', 'starfish', 'kelp', 'coral', 'rock', 'bucket', 'chair', 'plant', 'trash', 'table', 'minitank', 'bench', 'statue', 'vending',
@@ -2592,7 +2592,7 @@ function buildSpace() {
     const placed = BUILDINGS.filter(b => b.sphere && b !== earth);
     for (const t of giants) { const r = BT[t].r; for (let k = 0; k < 200; k++) { const a = rnd(0, TAU), dd = rnd(60 * E, 340 * E), xx = ex + Math.cos(a) * dd, zz = ez + Math.sin(a) * dd; if (Math.abs(xx) > 380 * E || Math.abs(zz) > 380 * E) continue;
       if (placed.some(b => Math.hypot(xx - b.x * UNIT, zz - b.z * UNIT) < (b.h / 2 * UNIT) * (b.T.planet === 'saturn' ? 2.4 : 1.3) + r * (t === 'saturn' ? 2.4 : 1.3) + 8 * E)) continue;
-      placed.push(makeBuilding(t, xx, zz, { mm: rnd(.8, 1.1) })); break; } } }
+      placed.push(makeBuilding(t, xx, zz, { mm: rnd(.8, 1) })); break; } } }
   makeBuilding('ceres', ex - 9 * E, ez + 14 * E, { mm: 1 });
   makeBuilding('ceres', ex + 13 * E, ez - 9 * E, { mm: .8, color: 0x9a8a7a });
   for (const b of BUILDINGS) { if (b.sphere && b !== earth) { b.y0 = 0; b.group.position.y = 0; } }
@@ -2612,6 +2612,8 @@ function buildSpace() {
   for (let i = 0; i < 14; i++) { const a = rnd(0, TAU), dd = rnd(3e4, 2.5e5); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, rnd(1.5e4, 4e4), 40 * K, 300, 6000); }
   // background field everywhere: rock size grows with distance, so there is always something the right size nearby
   { let n = 0; for (let i = 0; i < 12000 && n < 1400 * K; i++) { const a = rnd(0, TAU), dd = logR(2e4, 3e7); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.003, .03))) n++; } }
+  // huge rocks out in the outer system: the right size for a late-game crab (tens of thousands of km)
+  { let n = 0; for (let i = 0; i < 12000 && n < 450 * K; i++) { const a = rnd(0, TAU), dd = logR(5e7, 3.8e8); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.025, .055))) n++; } }
   // plenty of the big 'medium' rocks at every distance: the chunky targets that set off chain reactions
   { let n = 0; for (let i = 0; i < 16000 && n < 850 * K; i++) { const a = rnd(0, TAU), dd = logR(1.2e5, 3.8e8); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.02, .05))) n++; } }
   // 2) mid range swarms: grabbable once the crab is ~50-500 km, medium rocks for chain reactions
