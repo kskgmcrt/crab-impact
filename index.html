@@ -414,7 +414,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 13;
+const APP_VERSION = 14;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -1182,6 +1182,7 @@ const BT = {
   hill: { name: '丘', kind: 'mountain', w: 3000, d: 2600, h: 500, grid: [3, 2, 3], style: 'rock', colors: [0x5f8f42], mass: 6e11, mask: 'dome', green: true },
   plane: { name: 'カニジャンボ', zid: 'plane', kind: 'plane', w: 70, d: 64, h: 20, grid: [5, 2, 3], style: 'plain', colors: [0xf2f3f5], mass: 4e5 },
   ship: { name: 'カニ貨物船', zid: 'ship', kind: 'ship', w: 300, d: 52, h: 80, grid: [7, 3, 2], style: 'plain', colors: [0x2f3e56, 0x9a2a26], mass: 1.2e8 },
+  aster: { name: '小惑星', zid: 'asteroid', kind: 'rock', round: true, w: 2, d: 2, h: 2, grid: [3, 3, 3], style: 'rock', colors: [0x8a7d70], mass: 1, mask: 'ball' },
   cloud: { name: 'カニ雲', zid: 'cloud', kind: 'cloud', w: 2400, d: 1800, h: 700, grid: [3, 2, 3], style: 'plain', colors: [0xffffff], mass: 1.5e9 },
   aqtank: { name: '大水槽', kind: 'aqtank', w: 5, d: 1.2, h: 2.6, grid: [1, 1, 1], style: 'plain', colors: [0x1b8fb0], mass: 5000 },
   starter: { name: '水槽', kind: 'aqtank', w: .64, d: .44, h: .44, grid: [1, 1, 1], style: 'plain', colors: [0x1b8fb0], mass: 30 },
@@ -1285,7 +1286,7 @@ function natMat(T) {
 function natGeo(T, w, h, d, color, sd = rnd(0, 50)) {
   if (T.kind === 'rock') {
     const geo = new THREE.IcosahedronGeometry(1, 2), p = geo.attributes.position, cc = new Float32Array(p.count * 3), base = new THREE.Color(color);
-    for (let i = 0; i < p.count; i++) { _v1.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const n = fbm3(_v1.x * 1.8 + sd, _v1.y * 1.8, _v1.z * 1.8, 4); const k = 1 + n * .35; p.setXYZ(i, _v1.x * k * w / 2, Math.max(-.15, _v1.y) * k * h + h * .12, _v1.z * k * d / 2); const cl = base.clone().multiplyScalar(.75 + n * .7 + (_v1.y > .5 ? .12 : 0)); if (_v1.y > .55 && n > 0) cl.lerp(new THREE.Color(0x3f7a4a), .35); cc[i * 3] = cl.r; cc[i * 3 + 1] = cl.g; cc[i * 3 + 2] = cl.b; }
+    for (let i = 0; i < p.count; i++) { _v1.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const n = fbm3(_v1.x * 1.8 + sd, _v1.y * 1.8, _v1.z * 1.8, 4); const k = 1 + n * .35; if (T.round) p.setXYZ(i, _v1.x * k * w / 2, _v1.y * k * h / 2 + h / 2, _v1.z * k * d / 2); else p.setXYZ(i, _v1.x * k * w / 2, Math.max(-.15, _v1.y) * k * h + h * .12, _v1.z * k * d / 2); const cl = base.clone().multiplyScalar(.75 + n * .7 + (_v1.y > .5 ? .12 : 0)); if (_v1.y > .55 && n > 0) cl.lerp(new THREE.Color(0x3f7a4a), .35); cc[i * 3] = cl.r; cc[i * 3 + 1] = cl.g; cc[i * 3 + 2] = cl.b; }
     geo.setAttribute('color', new THREE.BufferAttribute(cc, 3)); geo.computeVertexNormals(); return geo;
   }
   if (T.kind === 'mountain') {
@@ -1747,6 +1748,7 @@ function makeBuilding(type, xm, zm, o = {}) {
   const n = nx * ny * nz; b.cells = new Uint8Array(n).fill(1);
   if (b.sphere) { for (let i = 0; i < n; i++) { cellLocal(b, i, _v1, _v2); if (_v1.length() > b.h / 2 * 1.02) b.cells[i] = 0; } }
   if (T.mask === 'dome') for (let i = 0; i < n; i++) { cellLocal(b, i, _v1, _v2); const q = (_v1.x / (b.w / 2)) ** 2 + (_v1.y / b.h) ** 2 + (_v1.z / (b.d / 2)) ** 2; if (q > 1.25) b.cells[i] = 0; }
+  if (T.mask === 'ball') for (let i = 0; i < n; i++) { cellLocal(b, i, _v1, _v2); const q = (_v1.x / (b.w / 2)) ** 2 + ((_v1.y - b.h / 2) / (b.h / 2)) ** 2 + (_v1.z / (b.d / 2)) ** 2; if (q > 1.2) b.cells[i] = 0; }
   if (T.mask === 'twin') for (let i = 0; i < n; i++) { const ix = i % nx, iy = Math.floor(i / (nx * nz)); if (iy >= ny * .3 && (ix === 2 || ix === 3)) b.cells[i] = 0; }
   let tot = 0; for (let i = 0; i < n; i++) tot += b.cells[i]; b.total = b.remaining = tot; b.cellMass = b.mass / Math.max(1, tot);
   b.instPool = new Int8Array(n).fill(-1); b.instIdx = new Int32Array(n).fill(-1);
@@ -1910,7 +1912,7 @@ function collapse(b, cause) {
   }
   onCollapse(b, n, cause);
   killBuilding(b);
-  if (b.sphere || b.T.kind === 'cloud' || b.T.kind === 'plane') { b.group.visible = false; batchHide(b); return; }
+  if (b.sphere || SPACE || b.T.kind === 'cloud' || b.T.kind === 'plane') { b.group.visible = false; batchHide(b); return; }
   SINKING.push({ g: b.batch ? null : b.group, t: 0, dur: .9 + Math.min(1.2, b.h / (crab.vis * 8)), h: b.h, y0: b.y0, dx: dir.x, dz: dir.z, b });
 }
 const SINKING = [];
@@ -2135,7 +2137,7 @@ const STAGES = [
     env: { sky: [0x4a7ad0, 0xffd6b0, 0x9a90a0], sunK: .8, fog: 0xe8d0c0, fogN: 3, fogF: 18, hemi: [0xf0e6ff, 0x6a6070, 1.0], sun: [0xffe4c8, 3.0], sunDir: [-.5, .5, .5], exp: 1.05, bloom: [.45, .5, 1.5], ei: .45, dust: 0xb8b0b0, stars: 0 } },
   { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 230, half: 44000, spawn: [0, 0],
     env: { sky: [0x3a78d8, 0xd6e8f8, 0x9ab0c0], sunK: 1, fog: 0xbcd4ec, fogN: 4, fogF: 26, hemi: [0xe0f0ff, 0x5a7050, 1.0], sun: [0xfff4e0, 3.0], sunDir: [.45, .75, .35], exp: 1.02, bloom: [.3, .45, 2], ei: 0, dust: 0xb4a894, stars: 0 } },
-  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 2e7, target: 330, half: 5e7, spawn: [0, 0], space: true,
+  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 2e7, target: 520, half: 5e7, spawn: [0, 0], space: true,
     env: { sky: [0x06081a, 0x0e1438, 0x06081a], sunK: 1, neb: 1.3, fog: 0x000000, fogN: 1e3, fogF: 2e3, hemi: [0x9aa0d0, 0x303048, .6], sun: [0xffffff, 3.6], sunDir: [1, .35, .55], exp: 1.25, bloom: [.8, .6, .8], ei: 0, dust: 0xa8988a, stars: 1 } },
 ];
 const LEVELS = [
@@ -2557,15 +2559,26 @@ function buildSpace() {
   for (const b of BUILDINGS) { if (b.sphere && b !== earth) { b.y0 = 0; b.group.position.y = 0; } }
   const city = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xffc070, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   earth.group.rotation.set(0, 2.3, -Math.PI / 2 * .62); city.position.set(earth.x, earth.y0 + earth.h / 2 + .2, earth.z); city.scale.setScalar(2.4); city.material.opacity = .7; stageRoot.add(city); ANIMS.push(() => { city.visible = earth.alive && !earth.grabbed; });
-  const avoid = (xx, zz, r) => BUILDINGS.some(b => b !== earth && Math.hypot(xx - b.x * UNIT, zz - b.z * UNIT) < b.h / 2 * UNIT + r + 5e4);
-  const rock = (xx, zz, r) => { const mass = 2000 * 4 / 3 * Math.PI * r ** 3; const pr = makeProp('asteroid', xx, zz, { model: bAsteroid(r), mm: mass / PS.asteroid.mass, y: -r * .85 }); pr.obj.rotation.set(rnd(0, 6), rnd(0, 6), rnd(0, 6)); pr.obj.updateMatrixWorld(true); updatePropCenter(pr); };
-  // small debris right next to the crab so there is something to grab at 6 km
-  for (let i = 0, n0 = 0; i < 800 && n0 < 36 * DENS; i++) { const a = rnd(0, TAU), dd = rnd(9e3, 9e4), xx = cx + Math.cos(a) * dd, zz = cz + Math.sin(a) * dd, r = Math.exp(rnd(Math.log(450), Math.log(2600))); if (avoid(xx, zz, r)) continue; rock(xx, zz, r); n0++; }
-  let n = 0; for (let i = 0; i < 6000 && n < 170 * DENS; i++) { const a = rnd(0, TAU), dd = Math.exp(rnd(Math.log(9e3), Math.log(1.6e6))), xx = cx + Math.cos(a) * dd, zz = cz + Math.sin(a) * dd, r = Math.exp(rnd(Math.log(700), Math.log(22000))); if (avoid(xx, zz, r)) continue; rock(xx, zz, r); n++; }
-  n = 0; for (let i = 0; i < 4000 && n < 90 * DENS; i++) { const a = rnd(0, TAU), dd = rnd(1.6e6, 1.5e7), xx = cx + Math.cos(a) * dd, zz = cz + Math.sin(a) * dd, r = Math.exp(rnd(Math.log(15000), Math.log(120000))); if (avoid(xx, zz, r)) continue; rock(xx, zz, r); n++; }
-  // an asteroid belt ring around the inner planets plus scattered rocks everywhere
-  n = 0; for (let i = 0; i < 4000 && n < 120 * DENS; i++) { const a = rnd(0, TAU), dd = rnd(1.7e7, 2.1e7), xx = ex + Math.cos(a) * dd, zz = ez + Math.sin(a) * dd, r = Math.exp(rnd(Math.log(20000), Math.log(500000))); if (Math.abs(xx) > 4.8e7 || Math.abs(zz) > 4.8e7 || avoid(xx, zz, r)) continue; rock(xx, zz, r); n++; }
-  n = 0; for (let i = 0; i < 4000 && n < 220 * DENS; i++) { const a = rnd(0, TAU), dd = rnd(1.5e6, 4.6e7), xx = ex + Math.cos(a) * dd, zz = ez + Math.sin(a) * dd, r = Math.exp(rnd(Math.log(8000), Math.log(360000))); if (Math.abs(xx) > 4.8e7 || Math.abs(zz) > 4.8e7 || avoid(xx, zz, r)) continue; rock(xx, zz, r); n++; }
+  const PL = BUILDINGS.filter(b => b.sphere && b !== earth);
+  const avoid = (xx, zz, r) => PL.some(b => Math.hypot(xx - b.x * UNIT, zz - b.z * UNIT) < b.h / 2 * UNIT * (b.T.planet === 'saturn' ? 2.3 : 1.05) + r + 2e4) || Math.abs(xx) > 4.9e7 || Math.abs(zz) > 4.9e7;
+  // asteroids are breakable rock bodies (instanced), packed into swarms so hits cascade into chain reactions
+  const ACOL = [0x8a7d70, 0x6f6660, 0x9a8e80, 0x5d5550, 0x7a6a5a, 0x8c8478];
+  const rock = (xx, zz, r) => { if (avoid(xx, zz, r)) return false; if (r > 2500 && Math.hypot(xx - cx, zz - cz) < r * 18 + 2.5e4) return false; /* keep the start area walkable */ const sq = rnd(.75, 1.25), w = 2 * r * sq, d = 2 * r / sq * rnd(.8, 1.2), h = 2 * r * rnd(.7, 1.05);
+    makeBuilding('aster', xx, zz, { w, d, h, y0: -h / 2, mm: 2000 * Math.PI / 6 * w * h * d, color: pick(ACOL) }); return true; };
+  const logR = (a, b) => Math.exp(rnd(Math.log(a), Math.log(b)));
+  const swarm = (x0, z0, rad, cnt, rMin, rMax) => { let n = 0; for (let i = 0; i < cnt * 4 && n < cnt; i++) { const a = rnd(0, TAU), dd = Math.sqrt(Math.random()) * rad; if (rock(x0 + Math.cos(a) * dd, z0 + Math.sin(a) * dd, logR(rMin, rMax))) n++; } };
+  const K = DENS;
+  // 1) right around the start: lots of grabbable pebbles (r 250 m - 2.5 km) with some bigger ones to smash
+  swarm(cx, cz, 9e4, 260 * K, 250, 2500);
+  for (let i = 0; i < 14; i++) { const a = rnd(0, TAU), dd = rnd(3e4, 2.5e5); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, rnd(1.5e4, 4e4), 40 * K, 300, 6000); }
+  // background field everywhere: rock size grows with distance, so there is always something the right size nearby
+  { let n = 0; for (let i = 0; i < 9000 && n < 900 * K; i++) { const a = rnd(0, TAU), dd = logR(2e4, 3e7); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.003, .03))) n++; } }
+  // 2) mid range swarms: grabbable once the crab is ~50-500 km, medium rocks for chain reactions
+  for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), dd = logR(2.5e5, 5e6); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * rnd(.12, .25), 45 * K, 2e3, 6e4); }
+  // 3) far swarms and the asteroid belt: big rocks for the late game
+  for (let i = 0; i < 18; i++) { const a = rnd(0, TAU), dd = rnd(5e6, 4.4e7); swarm(ex + Math.cos(a) * dd, ez + Math.sin(a) * dd, rnd(1.5e6, 4e6), 32 * K, 3e4, 6e5); }
+  { let n = 0; for (let i = 0; i < 4000 && n < 260 * K; i++) { const a = rnd(0, TAU), dd = rnd(1.65e7, 2.15e7); if (rock(ex + Math.cos(a) * dd, ez + Math.sin(a) * dd, logR(2e4, 7e5))) n++; } }
+  { let n = 0; for (let i = 0; i < 4000 && n < 240 * K; i++) { const a = rnd(0, TAU), dd = logR(1e5, 4.6e7); if (rock(ex + Math.cos(a) * dd, ez + Math.sin(a) * dd, logR(1e3, 4e5))) n++; } }
   for (const [xx, zz] of [[9 * E, 6 * E], [-11 * E, 3 * E], [5 * E, -22 * E], [-7 * E, 10 * E]]) makeProp('island', ex + xx, ez + zz, { model: bIsland(300e3), y: -300e3 * 1.2 });
   const sg = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xfff2d0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: .75 }));
   stageRoot.add(sg);
@@ -3016,7 +3029,7 @@ function loadStage(i, carry = null) {
   clearStage(); CARRY = carry;
   STAGE = STAGES[i]; G.stageIdx = i; UNIT = STAGE.unit; SPACE = !!STAGE.space; BOUND = STAGE.half / UNIT;
   stageRoot = new THREE.Group(); scene.add(stageRoot);
-  gridInit(BOUND, BOUND * 2 / ({ tokyo: 110, land: 300, downtown: 70 }[STAGE.key] || 48));
+  gridInit(BOUND, BOUND * 2 / ({ tokyo: 110, land: 300, downtown: 70, space: 260 }[STAGE.key] || 48));
   G.progress = 0; G.crabM = Math.max(G.crabM, STAGE.s0); crab.size = crab.vis = G.crabM / UNIT;
   GRAVITY = SPACE ? 0 : 25 * Math.pow(G.crabM, .75) / UNIT;
   applyEnv(STAGE.env);
