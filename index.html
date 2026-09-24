@@ -157,6 +157,7 @@ button:focus-visible{outline:3px solid var(--foam);outline-offset:3px}
 .bigBtn:hover{transform:translateX(4px);filter:brightness(1.1)}
 .bigBtn small{font-family:var(--fn);font-weight:700;font-size:12px;letter-spacing:.3em;opacity:.85}
 .subBtns{display:flex;gap:10px}
+.testBtn{flex:none;font-size:12px;padding:8px 14px;opacity:.75;border-style:dashed}
 .subBtn{flex:1;padding:12px 16px;border:1px solid var(--line);background:var(--panel);color:var(--paper);font-weight:700;font-size:14px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
 .subBtn:hover{background:rgba(255,255,255,.1)}
 .ctrl{padding:14px 20px 16px;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px;align-items:center}
@@ -344,6 +345,7 @@ button:focus-visible{outline:3px solid var(--foam);outline-offset:3px}
           <button class="subBtn" id="btnSoundT">サウンド: ON</button>
           <button class="subBtn" id="btnAutoT">自動つかみ: OFF</button>
         </div>
+        <button class="subBtn testBtn" id="btnTest">テストモード：カニ宇宙から開始</button>
         <div class="ctrl slab" id="ctrlPC">
           <h3>操作 — PC</h3>
           <kbd>WASD</kbd><span>移動（カニ歩き）</span>
@@ -433,7 +435,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 16;
+const APP_VERSION = 17;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -1214,7 +1216,7 @@ const BT = {
   pluto: { name: 'カニ冥王星', zid: 'pluto', kind: 'planet', r: 1188e3, grid: [7, 7, 7], style: 'rock', colors: [0xc8a88a], mass: 1.3e22, planet: 'pluto' },
   neptune: { name: 'カニ海王星', zid: 'neptune', kind: 'planet', r: 4.9e6, grid: [10, 10, 10], style: 'rock', colors: [0x3a64d8], mass: 1.02e26, planet: 'neptune' },
   uranus: { name: 'カニ天王星', zid: 'uranus', kind: 'planet', r: 5.1e6, grid: [10, 10, 10], style: 'rock', colors: [0x8ad8e0], mass: 8.7e25, planet: 'uranus' },
-  crabplanet: { name: '巨大カニ惑星', zid: 'crabplanet', kind: 'planet', r: 1.5e8, grid: [14, 14, 14], style: 'rock', colors: [0xe8502a], mass: 5e28, planet: 'crab', boss: true },
+  crabplanet: { name: '巨大カニ惑星', zid: 'crabplanet', kind: 'planet', r: 1.3e8, grid: [14, 14, 14], style: 'rock', colors: [0xe8502a], mass: 5e28, planet: 'crab', boss: true },
   pinkgas: { name: 'カニ桃色ガス惑星', zid: 'pinkgas', kind: 'planet', r: 1.15e7, grid: [11, 11, 11], style: 'rock', colors: [0xe8a0b8], mass: 3e26, planet: 'pinkgas' },
   icegiant: { name: 'カニ氷巨星', zid: 'icegiant', kind: 'planet', r: 7.5e6, grid: [10, 10, 10], style: 'rock', colors: [0x7ad8d0], mass: 1.4e26, planet: 'icegiant' },
   lava: { name: 'カニ溶岩惑星', zid: 'lava', kind: 'planet', r: 5.2e6, grid: [10, 10, 10], style: 'rock', colors: [0x5a2a1a], mass: 2.5e25, planet: 'lava' },
@@ -2170,7 +2172,7 @@ const STAGES = [
     env: { sky: [0x4a7ad0, 0xffd6b0, 0x9a90a0], sunK: .8, fog: 0xe8d0c0, fogN: 3, fogF: 18, hemi: [0xf0e6ff, 0x6a6070, 1.0], sun: [0xffe4c8, 3.0], sunDir: [-.5, .5, .5], exp: 1.05, bloom: [.45, .5, 1.5], ei: .45, dust: 0xb8b0b0, stars: 0 } },
   { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 184, half: 44000, spawn: [0, 0],
     env: { sky: [0x3a78d8, 0xd6e8f8, 0x9ab0c0], sunK: 1, fog: 0xbcd4ec, fogN: 4, fogF: 26, hemi: [0xe0f0ff, 0x5a7050, 1.0], sun: [0xfff4e0, 3.0], sunDir: [.45, .75, .35], exp: 1.02, bloom: [.3, .45, 2], ei: 0, dust: 0xb4a894, stars: 0 } },
-  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 1e8, target: 560, half: 5e8, spawn: [0, 0], space: true,
+  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 1e8, target: 470, half: 5e8, spawn: [0, 0], space: true,
     env: { sky: [0x06081a, 0x0e1438, 0x06081a], sunK: 1, neb: 1.3, fog: 0x000000, fogN: 1e3, fogF: 2e3, hemi: [0x9aa0d0, 0x303048, .6], sun: [0xffffff, 3.6], sunDir: [1, .35, .55], exp: 1.25, bloom: [.8, .6, .8], ei: 0, dust: 0xa8988a, stars: 1 } },
 ];
 const LEVELS = [
@@ -2742,6 +2744,7 @@ function onBuildingDamage(b, n, P, V, R, cause, src) {
 function bossHit(b, P, V, cause) {
   const m = HIT_MASS; HIT_MASS = 0;
   if (!(m > 0) || G.state !== 'play' || b.bossHp <= 0) return 0;
+  if (G.progress < 1) { if (G.time - (b.bossT || 0) > .3) { b.bossT = G.time; spawnSparks(P, V, 10, crab.vis * .6); Snd.clink(); } return 0; } // invulnerable until the growth gauge is full
   if (G.time - (b.bossT || 0) < .3) return 1; b.bossT = G.time;
   const sp = V.length(), k = clamp(sp / (crab.vis * 18), .4, 1.6), base = Math.max(0, Math.log10(m) - 21);
   const dmg = Math.round(base * base * k * 10) / 10;
@@ -2758,6 +2761,7 @@ function bossHit(b, P, V, cause) {
   if (b.bossHp <= 0) bossDefeated(b);
   return 1;
 }
+const BOSS_HINT = '地球級以上の<em>惑星</em>をつかんで、<em>巨大カニ惑星</em>に叩きつけろ!';
 function bossDefeated(b) {
   G.bossDown = true; G.winT = 0; G.clearTime = G.playTime; G.crabPlanet = true;
   collapse(b, 'boss'); slowmo(2.6, .25); G.flash = .8; addTrauma(1);
@@ -2814,13 +2818,16 @@ function findTarget(ci, holdOnly = false) {
   const S = crab.vis, cap = capKg(); const fx = Math.sin(crab.yaw), fz = Math.cos(crab.yaw);
   const o = _v1.set(crab.pos.x + fx * S * .55, crab.pos.y + S * .3, crab.pos.z + fz * S * .55);
   const reach = S * (IS_TOUCH ? 1.3 : 1.05); let best = null, bs = 1e9;
+  const planetsOnly = SPACE && G.progress >= 1; // final phase: only planets of about Earth size and up can be picked up
   for (const pr of PROPS) {
+    if (planetsOnly) break;
     if (!pr.alive || pr.held || (holdOnly && pr.mass > cap) || (holdOnly && pr.body && pr.body.thrown && pr.body.age < 1.5)) continue; const d = o.distanceTo(pr.center) - pr.radius * .6; if (d > reach) continue;
     const ok = pr.mass <= cap; const sc = d - (ok ? S * (.8 + .7 * pr.mass / cap) : 0); if (sc < bs) { bs = sc; best = { kind: 'prop', ref: pr, mass: pr.mass, name: pr.name }; }
   }
   queryB(o.x - reach - S, o.z - reach - S, o.x + reach + S, o.z + reach + S, _qb);
   for (const b of _qb) {
-    if (!b.alive || b.grabbed || b.T.kind === 'aqtank' || b.T.kind === 'cloud' && false || (holdOnly && b.mass > cap)) continue;
+    if (!b.alive || b.grabbed || b.T.kind === 'aqtank' || (holdOnly && b.mass > cap)) continue;
+    if (planetsOnly && !(b.sphere && !b.boss && b.h / 2 * UNIT >= 3.1e6)) continue;
     let d; if (b.sphere) d = Math.hypot(o.x - b.x, o.y - b.y0, o.z - b.z) - b.h / 2;
     else { const dx = Math.max(Math.abs(o.x - b.x) - b.w / 2, 0), dz = Math.max(Math.abs(o.z - b.z) - b.d / 2, 0), dy = Math.max(b.y0 - o.y, o.y - (b.y0 + b.h), 0); d = Math.hypot(dx, dy, dz); }
     if (d > reach) continue; const ok = b.mass <= cap; const sc = d - (ok ? S * (.8 + .7 * b.mass / cap) : 0);
@@ -3056,12 +3063,16 @@ function updateGrowth() {
   if (lv > G.level) { G.level = lv; levelUp(lv); }
   if (st.space && !G.biggerEarth && G.crabM > 1.3e7 && G.state === 'play') { G.biggerEarth = true; G.revealT = 0; callout('地球よりデカい!!', 'BIGGER THAN EARTH', 'gd', 1.3); slowmo(1.6, .3); G.flash = .4; Snd.levelUp(); addTrauma(.4); }
   if (G.progress >= 1 && !st.space && G.state === 'play') stageClear();
+  if (st.space && G.progress >= 1 && !G.bossPhase && G.state === 'play') { // final phase: the crab planet becomes vulnerable
+    G.bossPhase = true; callout('最終決戦', '巨大カニ惑星を倒せ!', 'gd', 1.3); banner('FINAL BATTLE', '巨大カニ惑星を倒せ', '地球級以上の惑星をつかんで叩きつけろ ― ミニマップの<b>赤い巨星</b>', 'stage');
+    Snd.levelUp(); G.flash = .45; slowmo(1.2, .4); hint(BOSS_HINT);
+  }
 }
 function levelUp(lv) {
   const L = LEVELS[lv - 1];
   banner('LEVEL UP', `Lv.${lv} ${L.name}`, `<b>${L.item}</b> が持てるようになった!`, '', thumb(L.zid));
   Snd.levelUp(); G.flash = .35; crab.squash = -.2; addTrauma(.2);
-  if (lv === LEVELS.length) hint('巨大惑星をつかんで、<em>巨大カニ惑星</em>に叩きつけろ!');
+  if (lv === LEVELS.length && G.progress >= 1) hint(BOSS_HINT);
 }
 function stageClear() { G.state = 'clear'; G.clearT = 0; banner('STAGE CLEAR', '巨大化完了', `${STAGE.name} が小さく見えてきた…`, 'stage'); Snd.stage(); slowmo(1.2, .35); hint(''); }
 function applyEnv(e) {
@@ -3171,7 +3182,7 @@ function updateHUD(dt) {
   $('comboN').textContent = '×' + G.combo;
   $('crabLen').textContent = fmtLen(crab.vis * UNIT);
   const p = Math.min(1, G.progress); $('growPct').textContent = Math.floor(p * 100) + '%'; $('growFill').style.width = (p * 100) + '%';
-  { const bs = STAGE.boss, on = !!(bs && bs.alive && G.state !== 'title'); const bb = $('bossBar'); if (bb.hidden === on) bb.hidden = !on;
+  { const bs = STAGE.boss, on = !!(bs && bs.alive && G.state !== 'title' && G.progress >= 1); const bb = $('bossBar'); if (bb.hidden === on) bb.hidden = !on;
     if (on) { const f = bs.bossHp / bs.bossMax; $('bossFill').style.width = (f * 100) + '%'; $('bossPct').textContent = 'HP ' + Math.ceil(f * 100) + '%'; G.bossFlash = Math.max(0, (G.bossFlash || 0) - .1); bb.classList.toggle('hit', G.bossFlash > 0); } }
   $('destroyed').textContent = fmtMass(G.totalMass); $('maxCombo').textContent = G.maxCombo;
   const cap = capKg(), L = LEVELS[G.level - 1], N = LEVELS[G.level];
@@ -3294,10 +3305,15 @@ function startPlay() {
   canvas.focus();
 }
 $('btnStart').addEventListener('click', startPlay);
+// test mode: jump straight into the last stage
+$('btnTest').addEventListener('click', () => {
+  resetGame(); crab.pos.set(0, 0, 0); CARRY = null; G.crabM = STAGES[6].s0; loadStage(6); G.level = computeLevel(); updateGrowth(); G.tut = 9;
+  startPlay(); banner('TEST MODE', STAGE.name, `体長 ${fmtLen(G.crabM)} — テストモード`, 'stage'); hint('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう');
+});
 $('btnAgain').addEventListener('click', () => { resetGame(); startPlay(); });
 function resetGame() {
   if (END.scene) { renderPass.scene = scene; renderPass.camera = camera; END.scene = null; }
-  Object.assign(G, { stageIdx: 0, crabM: .1, progress: 0, totalMass: 0, combo: 0, comboT: 0, maxCombo: 0, playTime: 0, level: 1, hitstop: 0, slowT: 0, trauma: 0, events: [], chainEv: [], tut: 0, tutT: 0, camMul: 1, destroyed: 0, flash: 0, ca: 0, throwHint: false, biggerEarth: false, revealT: null, bossDown: false, winT: 0, clearTime: 0, crabPlanet: false });
+  Object.assign(G, { stageIdx: 0, crabM: .1, progress: 0, totalMass: 0, combo: 0, comboT: 0, maxCombo: 0, playTime: 0, level: 1, hitstop: 0, slowT: 0, trauma: 0, events: [], chainEv: [], tut: 0, tutT: 0, camMul: 1, destroyed: 0, flash: 0, ca: 0, throwHint: false, biggerEarth: false, revealT: null, bossDown: false, winT: 0, clearTime: 0, crabPlanet: false, bossPhase: false });
   crab.model.root.visible = true; $('fade').style.opacity = 0; hint(''); CARRY = null;
   loadStage(0);
 }
@@ -3467,7 +3483,7 @@ function tick(rdt, draw) {
     }
     else {
       G.transT2 += rdt; const k = clamp(G.transT2 / 1.2, 0, 1); $('fade').style.opacity = 0;
-      if (k >= 1) { G.state = 'play'; G.camMul = 1; banner(`STAGE ${STAGE.no}`, STAGE.name, `体長 ${fmtLen(G.crabM)} — ${STAGE.en}`, 'stage'); if (STAGE.space) hint('小惑星をつかんで巨大化! 最後は巨大惑星を<em>巨大カニ惑星</em>に叩きつけろ'); setTimeout(() => { if (G.state === 'play' && STAGE.space && G.level < LEVELS.length) hint(''); }, 7000); }
+      if (k >= 1) { G.state = 'play'; G.camMul = 1; banner(`STAGE ${STAGE.no}`, STAGE.name, `体長 ${fmtLen(G.crabM)} — ${STAGE.en}`, 'stage'); if (STAGE.space) hint('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう'); setTimeout(() => { if (G.state === 'play' && STAGE.space && G.level < LEVELS.length) hint(''); }, 7000); }
     }
   }
   if (G.bossDown && G.state === 'play') { G.winT += rdt; if (G.winT > 4.5) startEnding(null); }
