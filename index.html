@@ -435,7 +435,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 17;
+const APP_VERSION = 18;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -2172,7 +2172,7 @@ const STAGES = [
     env: { sky: [0x4a7ad0, 0xffd6b0, 0x9a90a0], sunK: .8, fog: 0xe8d0c0, fogN: 3, fogF: 18, hemi: [0xf0e6ff, 0x6a6070, 1.0], sun: [0xffe4c8, 3.0], sunDir: [-.5, .5, .5], exp: 1.05, bloom: [.45, .5, 1.5], ei: .45, dust: 0xb8b0b0, stars: 0 } },
   { key: 'land', envK: 1, no: 6, name: 'カニ地球', en: 'EARTH', unit: 300, s0: 300, s1: 6000, target: 184, half: 44000, spawn: [0, 0],
     env: { sky: [0x3a78d8, 0xd6e8f8, 0x9ab0c0], sunK: 1, fog: 0xbcd4ec, fogN: 4, fogF: 26, hemi: [0xe0f0ff, 0x5a7050, 1.0], sun: [0xfff4e0, 3.0], sunDir: [.45, .75, .35], exp: 1.02, bloom: [.3, .45, 2], ei: 0, dust: 0xb4a894, stars: 0 } },
-  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 1e8, target: 470, half: 5e8, spawn: [0, 0], space: true,
+  { key: 'space', envK: 0.8, no: 7, name: 'カニ宇宙', en: 'SPACE', unit: 6000, s0: 6000, s1: 1e8, target: 400, half: 5e8, spawn: [0, 0], space: true,
     env: { sky: [0x06081a, 0x0e1438, 0x06081a], sunK: 1, neb: 1.3, fog: 0x000000, fogN: 1e3, fogF: 2e3, hemi: [0x9aa0d0, 0x303048, .6], sun: [0xffffff, 3.6], sunDir: [1, .35, .55], exp: 1.25, bloom: [.8, .6, .8], ei: 0, dust: 0xa8988a, stars: 1 } },
 ];
 const LEVELS = [
@@ -2608,12 +2608,14 @@ function buildSpace() {
   const swarm = (x0, z0, rad, cnt, rMin, rMax) => { let n = 0; for (let i = 0; i < cnt * 4 && n < cnt; i++) { const a = rnd(0, TAU), dd = Math.sqrt(Math.random()) * rad; if (rock(x0 + Math.cos(a) * dd, z0 + Math.sin(a) * dd, logR(rMin, rMax))) n++; } };
   const K = DENS;
   // 1) right around the start: lots of grabbable pebbles (r 250 m - 2.5 km) with some bigger ones to smash
-  swarm(cx, cz, 9e4, 260 * K, 250, 2500);
+  swarm(cx, cz, 9e4, 320 * K, 250, 2500);
   for (let i = 0; i < 14; i++) { const a = rnd(0, TAU), dd = rnd(3e4, 2.5e5); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, rnd(1.5e4, 4e4), 40 * K, 300, 6000); }
   // background field everywhere: rock size grows with distance, so there is always something the right size nearby
-  { let n = 0; for (let i = 0; i < 9000 && n < 900 * K; i++) { const a = rnd(0, TAU), dd = logR(2e4, 3e7); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.003, .03))) n++; } }
+  { let n = 0; for (let i = 0; i < 9000 && n < 1100 * K; i++) { const a = rnd(0, TAU), dd = logR(2e4, 3e7); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.003, .03))) n++; } }
+  // plenty of the big 'medium' rocks at every distance: the chunky targets that set off chain reactions
+  { let n = 0; for (let i = 0; i < 9000 && n < 420 * K; i++) { const a = rnd(0, TAU), dd = logR(1.2e5, 3.8e8); if (rock(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * logR(.018, .045))) n++; } }
   // 2) mid range swarms: grabbable once the crab is ~50-500 km, medium rocks for chain reactions
-  for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), dd = logR(2.5e5, 5e6); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * rnd(.12, .25), 45 * K, 2e3, 6e4); }
+  for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), dd = logR(2.5e5, 5e6); swarm(cx + Math.cos(a) * dd, cz + Math.sin(a) * dd, dd * rnd(.12, .25), 55 * K, 2e3, 9e4); }
   // 3) far swarms and the asteroid belt: big rocks for the late game
   for (let i = 0; i < 18; i++) { const a = rnd(0, TAU), dd = rnd(5e6, 4.4e7); swarm(ex + Math.cos(a) * dd, ez + Math.sin(a) * dd, rnd(1.5e6, 4e6), 32 * K, 3e4, 6e5); }
   for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), dd = rnd(5e7, 3.6e8); swarm(ex + Math.cos(a) * dd, ez + Math.sin(a) * dd, dd * rnd(.05, .1), 30 * K, dd * .002, dd * .02); }
@@ -2712,6 +2714,7 @@ function banner(k, t, s = '', cls = '', img = '') {
   b.appendChild(el); setTimeout(() => { if (el.parentNode) el.remove(); }, 3400);
 }
 let hintKey = '';
+function hintFor(html, sec) { hint(html); setTimeout(() => { if (hintKey === html) hint(''); }, sec * 1000); } // shown briefly, then cleared
 function hint(html) { const h = $('hint'); if (hintKey === html) return; hintKey = html; if (!html) { h.classList.remove('on'); return; } h.innerHTML = html; h.classList.add('on'); }
 function thumbImg(z) { const u = thumb(z); return u ? `<img src="${u}" alt="">` : ''; }
 function registerZukan(zid) {
@@ -3308,7 +3311,7 @@ $('btnStart').addEventListener('click', startPlay);
 // test mode: jump straight into the last stage
 $('btnTest').addEventListener('click', () => {
   resetGame(); crab.pos.set(0, 0, 0); CARRY = null; G.crabM = STAGES[6].s0; loadStage(6); G.level = computeLevel(); updateGrowth(); G.tut = 9;
-  startPlay(); banner('TEST MODE', STAGE.name, `体長 ${fmtLen(G.crabM)} — テストモード`, 'stage'); hint('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう');
+  startPlay(); banner('TEST MODE', STAGE.name, `体長 ${fmtLen(G.crabM)} — テストモード`, 'stage'); hintFor('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう', 7);
 });
 $('btnAgain').addEventListener('click', () => { resetGame(); startPlay(); });
 function resetGame() {
@@ -3483,7 +3486,7 @@ function tick(rdt, draw) {
     }
     else {
       G.transT2 += rdt; const k = clamp(G.transT2 / 1.2, 0, 1); $('fade').style.opacity = 0;
-      if (k >= 1) { G.state = 'play'; G.camMul = 1; banner(`STAGE ${STAGE.no}`, STAGE.name, `体長 ${fmtLen(G.crabM)} — ${STAGE.en}`, 'stage'); if (STAGE.space) hint('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう'); setTimeout(() => { if (G.state === 'play' && STAGE.space && G.level < LEVELS.length) hint(''); }, 7000); }
+      if (k >= 1) { G.state = 'play'; G.camMul = 1; banner(`STAGE ${STAGE.no}`, STAGE.name, `体長 ${fmtLen(G.crabM)} — ${STAGE.en}`, 'stage'); if (STAGE.space) hintFor('<em>小惑星</em>をつかんで壊して、巨大化ゲージを<em>100%</em>にしよう', 7); }
     }
   }
   if (G.bossDown && G.state === 'play') { G.winT += rdt; if (G.winT > 4.5) startEnding(null); }
