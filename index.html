@@ -433,7 +433,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* =====================================================================
    CORE
    ===================================================================== */
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -666,7 +666,10 @@ function setupPost() {
   renderPass = new RenderPass(scene, camera);
   bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .5, .5, .85);
   fxPass = new ShaderPass(FXShader);
-  composer.addPass(renderPass); composer.addPass(bloomPass); composer.addPass(new OutputPass()); composer.addPass(fxPass);
+  // scrub NaN/Inf (some desktop GPUs produce them on extreme highlights) before bloom can smear them into black blocks
+  const clean = new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c=texture2D(tDiffuse,vUv); if(!(c.r==c.r&&c.g==c.g&&c.b==c.b)||c.r>6e4||c.g>6e4||c.b>6e4) c.rgb=vec3(0.0); gl_FragColor=vec4(clamp(c.rgb,0.0,200.0),c.a); }` });
+  composer.addPass(renderPass); composer.addPass(clean); composer.addPass(bloomPass); composer.addPass(new OutputPass()); composer.addPass(fxPass);
   composer.setPixelRatio(pr()); composer.setSize(innerWidth, innerHeight);
 }
 setupPost();
@@ -2124,7 +2127,7 @@ const SUN_DIR = new V3(.5, 1, .3).normalize();
 
 const skyMat = new THREE.ShaderMaterial({
   uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, bot: { value: new THREE.Color() }, sunDir: { value: new V3() }, sunCol: { value: new THREE.Color() }, sunK: { value: 1 }, neb: { value: 0 }, time: { value: 0 } },
-  vertexShader: `varying vec3 vD; void main(){ vD=position; vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position=p.xyww; }`,
+  vertexShader: `varying vec3 vD; void main(){ vD=position; vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.0); gl_Position=vec4(p.xy,p.w*0.99999,p.w); }`, // keep the sky just inside the far plane (exactly on it flickers on some desktop GPUs)
   fragmentShader: `uniform vec3 top,mid,bot,sunDir,sunCol; uniform float sunK,neb,time; varying vec3 vD;
   float h3(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); }
   float n3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
@@ -2134,7 +2137,7 @@ const skyMat = new THREE.ShaderMaterial({
     float s=max(dot(d,normalize(sunDir)),0.0); col+=sunCol*sunK*(pow(s,900.0)*14.0 + pow(s,10.0)*0.3 + pow(s,3.0)*0.08);
     if(neb>0.0){ float n=fbm(d*2.2+vec3(0.0,0.0,time*0.002)); float m=fbm(d*4.0+vec3(5.2)); vec3 nc=mix(vec3(0.35,0.08,0.45),vec3(0.05,0.35,0.55),m); col+=nc*pow(max(n-0.35,0.0),1.6)*2.6*neb; col+=vec3(0.9,0.5,0.3)*pow(max(fbm(d*1.3+vec3(9.0))-0.5,0.0),2.0)*1.5*neb; }
     gl_FragColor=vec4(col,1.0); }`,
-  side: THREE.BackSide, depthWrite: false, depthTest: true
+  side: THREE.BackSide, depthWrite: false, depthTest: false
 });
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), skyMat); sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky);
 const stars = (() => {
@@ -3518,7 +3521,7 @@ function boot() {
   G.state = 'title'; G.zoom = .85;
   $('loading').hidden = true;
   for (const z of ZUKAN) { THUMB_Q.push([z, false]); THUMB_Q.push([z, true]); }
-  window.CRAB = { batches: () => { const o = {}; for (const [k, v] of BATCHES) o[k] = v.n - v.free.length; return o; }, mapBench: (n = 20) => { const w = miniC.clientWidth, h = miniC.clientHeight; const r = []; for (let i = 0; i < n; i++) { const a = performance.now(); fogReveal(); const b = performance.now(); renderMap(miniX, w, h, w / Math.max(CAM.dist * 2.6, crab.vis * 14), crab.pos.x + i, crab.pos.z, true); r.push((b - a).toFixed(1) + "/" + (performance.now() - b).toFixed(1)); } return r.join(" "); }, stats: () => ({ deb: DEB.length, dust: DUST.n, glow: GLOWP.n, drops: DROPS.n, sink: SINKING.length, load: +LOAD.toFixed(2), rel: REL_RATE | 0, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, bodies: typeof BODIES !== "undefined" ? BODIES.length : -1 }), G, crab, loadStage, STAGES, get B() { return BUILDINGS; }, get P() { return PROPS; }, get D() { return DEB; }, clawAction, capKg, thumb, PERF, tick, get RES() { return RES_SCALE; }, sim, INP, END, renderer, composer, scene, camera, bloomPass, fxPass, THREE, startEnding, updateGrowth };
+  window.CRAB = { Snd, Music, get STAGE() { return STAGE; }, CAM, findTarget, computeLevel, get BOUND() { return BOUND; }, get UNIT() { return UNIT; }, startPlay, batches: () => { const o = {}; for (const [k, v] of BATCHES) o[k] = v.n - v.free.length; return o; }, mapBench: (n = 20) => { const w = miniC.clientWidth, h = miniC.clientHeight; const r = []; for (let i = 0; i < n; i++) { const a = performance.now(); fogReveal(); const b = performance.now(); renderMap(miniX, w, h, w / Math.max(CAM.dist * 2.6, crab.vis * 14), crab.pos.x + i, crab.pos.z, true); r.push((b - a).toFixed(1) + "/" + (performance.now() - b).toFixed(1)); } return r.join(" "); }, stats: () => ({ deb: DEB.length, dust: DUST.n, glow: GLOWP.n, drops: DROPS.n, sink: SINKING.length, load: +LOAD.toFixed(2), rel: REL_RATE | 0, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, bodies: typeof BODIES !== "undefined" ? BODIES.length : -1 }), G, crab, loadStage, STAGES, get B() { return BUILDINGS; }, get P() { return PROPS; }, get D() { return DEB; }, clawAction, capKg, thumb, PERF, tick, get RES() { return RES_SCALE; }, sim, INP, END, renderer, composer, scene, camera, bloomPass, fxPass, THREE, startEnding, updateGrowth };
   requestAnimationFrame(frame);
 }
 (document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]) : Promise.resolve()).then(boot);
